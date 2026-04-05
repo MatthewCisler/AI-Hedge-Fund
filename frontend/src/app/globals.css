@@ -1,0 +1,233 @@
+:root {
+  --bg: #f3efe7;
+  --surface: rgba(255, 252, 247, 0.9);
+  --surface-strong: #fffaf2;
+  --ink: #1f2430;
+  --muted: #68707d;
+  --accent: #9a3412;
+  --accent-soft: #f9d9c8;
+  --positive: #0f766e;
+  --negative: #b42318;
+  --border: rgba(31, 36, 48, 0.08);
+  --shadow: 0 24px 60px rgba(60, 40, 24, 0.12);
+  --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  --sans: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--sans);
+  background:
+    radial-gradient(circle at top left, rgba(154, 52, 18, 0.12), transparent 30%),
+    linear-gradient(180deg, #fbf7f0 0%, #efe7db 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.landing,
+.authPage {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.hero,
+.authCard,
+.card,
+.sidebar,
+.statCard {
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.hero {
+  max-width: 760px;
+  padding: 3rem;
+  border-radius: 32px;
+}
+
+.hero h1,
+.pageHeader h1,
+.authCard h1,
+.card h2,
+.sidebar h1 {
+  margin: 0;
+  font-family: var(--serif);
+  letter-spacing: -0.03em;
+}
+
+.muted,
+label {
+  color: var(--muted);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+}
+
+.heroActions,
+.shell {
+  display: flex;
+  gap: 1rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.25rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.button.primary {
+  background: var(--accent);
+  color: white;
+}
+
+.button.secondary {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.authCard {
+  width: min(420px, 100%);
+  padding: 2rem;
+  border-radius: 24px;
+  display: grid;
+  gap: 1rem;
+}
+
+.authCard input,
+.settingsForm input {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+}
+
+.shell {
+  align-items: stretch;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+.sidebar {
+  width: 280px;
+  border-radius: 28px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.navLink {
+  display: block;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+}
+
+.navLink:hover {
+  background: rgba(154, 52, 18, 0.08);
+}
+
+.content {
+  flex: 1;
+  padding: 1rem 0 1rem 1rem;
+}
+
+.pageHeader {
+  margin-bottom: 1.25rem;
+}
+
+.statGrid,
+.dashboardGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.statGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.dashboardGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.statCard,
+.card {
+  border-radius: 24px;
+  padding: 1.25rem;
+}
+
+.statCard strong {
+  font-size: 1.8rem;
+}
+
+.statCard.positive strong {
+  color: var(--positive);
+}
+
+.statCard.negative strong {
+  color: var(--negative);
+}
+
+.list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.listRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.alignRight {
+  text-align: right;
+}
+
+.settingsForm {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (max-width: 960px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .content {
+    padding-left: 0;
+  }
+
+  .statGrid,
+  .dashboardGrid {
+    grid-template-columns: 1fr;
+  }
+}
