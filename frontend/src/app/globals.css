@@ -1,11 +1,11 @@
 :root {
-  --bg: #f3efe7;
-  --surface: rgba(255, 252, 247, 0.9);
-  --surface-strong: #fffaf2;
+  --bg: #f6f7f4;
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-strong: #ffffff;
   --ink: #1f2430;
   --muted: #68707d;
-  --accent: #9a3412;
-  --accent-soft: #f9d9c8;
+  --accent: #14532d;
+  --accent-soft: #d9f99d;
   --positive: #0f766e;
   --negative: #b42318;
   --border: rgba(31, 36, 48, 0.08);
@@ -24,8 +24,7 @@ body {
   color: var(--ink);
   font-family: var(--sans);
   background:
-    radial-gradient(circle at top left, rgba(154, 52, 18, 0.12), transparent 30%),
-    linear-gradient(180deg, #fbf7f0 0%, #efe7db 100%);
+    linear-gradient(180deg, #fbfcf8 0%, #eef2ec 100%);
 }
 
 a {
@@ -55,7 +54,7 @@ a {
 .hero {
   max-width: 760px;
   padding: 3rem;
-  border-radius: 32px;
+  border-radius: 8px;
 }
 
 .hero h1,
@@ -82,7 +81,9 @@ label {
 }
 
 .heroActions,
-.shell {
+.shell,
+.metricGrid,
+.profileGrid {
   display: flex;
   gap: 1rem;
 }
@@ -92,7 +93,7 @@ label {
   align-items: center;
   justify-content: center;
   padding: 0.9rem 1.25rem;
-  border-radius: 999px;
+  border-radius: 8px;
   font-weight: 600;
 }
 
@@ -146,7 +147,7 @@ label {
 }
 
 .navLink:hover {
-  background: rgba(154, 52, 18, 0.08);
+  background: rgba(20, 83, 45, 0.08);
 }
 
 .content {
@@ -175,7 +176,7 @@ label {
 
 .statCard,
 .card {
-  border-radius: 24px;
+  border-radius: 8px;
   padding: 1.25rem;
 }
 
@@ -204,6 +205,10 @@ label {
   border-top: 1px solid var(--border);
 }
 
+.listRow.stacked {
+  align-items: flex-start;
+}
+
 .alignRight {
   text-align: right;
 }
@@ -211,6 +216,87 @@ label {
 .settingsForm {
   display: grid;
   gap: 1rem;
+}
+
+.metricGrid,
+.profileGrid {
+  flex-wrap: wrap;
+}
+
+.metricTile,
+.profilePanel {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.metricTile {
+  min-width: 140px;
+}
+
+.metricTile span {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.metricTile strong {
+  display: block;
+  font-size: 1.35rem;
+}
+
+.positiveText {
+  color: var(--positive);
+}
+
+.negativeText {
+  color: var(--negative);
+}
+
+.tableLike {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tableHeader,
+.tableRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.tableHeader {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.tableRow {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.reportRows,
+.ruleList {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.reportRows {
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.profilePanel {
+  flex: 1 1 280px;
+}
+
+.profilePanel h3 {
+  margin-top: 0;
+  text-transform: capitalize;
 }
 
 @media (max-width: 960px) {
@@ -228,6 +314,11 @@ label {
 
   .statGrid,
   .dashboardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tableHeader,
+  .tableRow {
     grid-template-columns: 1fr;
   }
 }

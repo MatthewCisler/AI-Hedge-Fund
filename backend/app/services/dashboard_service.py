@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.ai_decision import AIDecision
+from app.models.benchmark import BenchmarkSnapshot
 from app.models.daily_report import DailyReport
 from app.models.news_article import NewsArticle
 from app.models.order import Order, QueuedTrade
@@ -51,6 +52,15 @@ class DashboardService:
                 .limit(10)
             ).all()
         )
+        benchmarks = list(
+            db.scalars(
+                select(BenchmarkSnapshot)
+                .join_from(BenchmarkSnapshot, BenchmarkSnapshot.portfolio)
+                .where(BenchmarkSnapshot.portfolio.has(user_id=user_id))
+                .order_by(BenchmarkSnapshot.snapshot_date.desc(), BenchmarkSnapshot.benchmark_symbol)
+                .limit(20)
+            ).all()
+        )
         return DashboardResponse(
             portfolios=portfolios,
             queued_trades=queued,
@@ -58,6 +68,7 @@ class DashboardService:
             recent_news=news,
             recent_ai_decisions=decisions,
             latest_reports=reports,
+            benchmarks=benchmarks,
         )
 
 

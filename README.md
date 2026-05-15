@@ -35,8 +35,8 @@ Educational and experimental full-stack paper-trading application for U.S. stock
 - Queue/cache placeholder: Redis
 - Frontend: Next.js App Router
 - Broker: Alpaca paper trading abstraction
-- AI: local-model interface abstraction with a safe stub implementation
-- News: pluggable provider abstraction with a safe stub implementation
+- AI: local Ollama adapter, defaulting to `qwen3:8b` at `http://localhost:11434`
+- News: pluggable public RSS ingestion with URL deduplication and ticker inference
 - Reporting: database-backed daily reports plus CSV export
 
 ## Core safety constraints
@@ -54,20 +54,20 @@ Implemented:
 
 - Multi-user data model with user-isolated portfolios
 - Portfolio creation and editable rule defaults by risk profile
-- Order, trade, queued trade, AI decision, news, report, and audit log models
-- FastAPI routes for auth, dashboard, portfolios, settings, trades, and reports
-- Service abstractions for auth, portfolios, AI, news, broker, rules, dashboard, and reporting
-- APScheduler stubs for intraday checks, evening scans, market-open queued orders, and daily reports at about 3:10 PM Central
-- Next.js frontend skeleton with login, register, dashboard, portfolio detail, rules, trades, and reports pages
+- Order, trade, queued trade, AI decision, news, benchmark, report, and audit log models
+- FastAPI routes for auth, dashboard, portfolios, benchmarks, settings, trades, AI decisions, news, and reports
+- Ollama-backed AI service abstraction with a deterministic fallback when the local model is unavailable
+- RSS news ingestion that stores source, headline, URL, timestamp, summary, and inferred tickers
+- Alpaca paper-trading abstraction that refuses non-paper trading endpoints
+- Deterministic rules engine for cash, max position size, liquidity, daily trade count, ticker cooldown, ETF permission, and market-hours queueing
+- APScheduler jobs for intraday analysis, evening scans, market-open queued orders, and daily reports at about 3:10 PM Central
+- Next.js dashboard, rules, trades, AI decisions, benchmark comparison, and reports pages
 
 Stubbed on purpose:
 
 - Real JWT request auth middleware
-- Real Alpaca paper API HTTP client calls
-- Real local LLM inference adapter
-- Real RSS/news feed ingestion pipeline
 - Alembic migrations
-- Full frontend forms, mutations, and charts
+- Full frontend mutation forms and charts
 - Market calendar holiday awareness
 
 ## Assumptions
@@ -97,13 +97,34 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-4. Update `.env` with your PostgreSQL, Redis, JWT, and Alpaca paper credentials.
-5. Create the PostgreSQL database.
-6. Start the backend:
+4. Update `.env` with your database, JWT, Ollama, news RSS, and Alpaca paper credentials.
+5. Start Ollama and pull the local model:
+
+```bash
+ollama pull qwen3:8b
+ollama serve
+```
+
+6. Create the database if you use PostgreSQL. The local `.env` can point at SQLite for development.
+7. Start the backend:
 
 ```bash
 uvicorn app.main:app --reload
 ```
+
+Key backend environment variables:
+
+- `DATABASE_URL`
+- `JWT_SECRET_KEY`
+- `ALPACA_BASE_URL=https://paper-api.alpaca.markets`
+- `ALPACA_DATA_URL=https://data.alpaca.markets`
+- `ALPACA_API_KEY`
+- `ALPACA_API_SECRET`
+- `LOCAL_AI_PROVIDER=ollama`
+- `OLLAMA_URL=http://localhost:11434`
+- `OLLAMA_MODEL=qwen3:8b`
+- `NEWS_RSS_SOURCES=[...]`
+- `MARKET_TIMEZONE=America/Chicago`
 
 ## Frontend setup
 
@@ -133,27 +154,32 @@ npm run dev
 - Use HTTPS even on a private network if remote access is possible.
 - Restrict access with VPN, Tailscale, or firewall rules if hosted at home.
 - Keep Alpaca credentials in environment variables only.
+- Keep `ALPACA_BASE_URL` set to `https://paper-api.alpaca.markets`; the broker adapter refuses live endpoints.
 - Add backup and log-rotation policies before storing meaningful historical data.
 
 ## Suggested next steps
 
 1. Add Alembic migrations and seed data.
 2. Replace the header-based auth stub with JWT bearer authentication.
-3. Implement Alpaca paper endpoints and order fill synchronization.
+3. Add Alpaca paper order fill synchronization.
 4. Add a real market calendar and holiday-aware scheduler.
-5. Build ingestion jobs for RSS/Yahoo-compatible news feeds with deduplication.
-6. Wire a real local LLM adapter into the AI service abstraction.
-7. Add portfolio analytics, charts, and report tables on the frontend.
+5. Add frontend mutation forms for report generation, AI analysis, and rules editing.
+6. Add Alembic migrations for production database upgrades.
 
 ## Example API surface
 
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
 - `GET /api/v1/dashboard`
+- `GET /api/v1/ai/decisions`
+- `POST /api/v1/ai/analyze?portfolio_id=1`
+- `GET /api/v1/news`
 - `GET /api/v1/portfolios`
 - `POST /api/v1/portfolios`
 - `GET /api/v1/portfolios/{portfolio_id}`
 - `PUT /api/v1/portfolios/{portfolio_id}/rules`
+- `GET /api/v1/portfolios/{portfolio_id}/benchmarks`
+- `POST /api/v1/portfolios/{portfolio_id}/benchmarks/refresh`
 - `GET /api/v1/settings/risk-profile-defaults`
 - `GET /api/v1/trades/orders`
 - `POST /api/v1/trades/orders`
@@ -161,4 +187,5 @@ npm run dev
 - `GET /api/v1/trades`
 - `GET /api/v1/reports`
 - `GET /api/v1/reports/{report_id}`
+- `GET /api/v1/reports/{report_id}/csv`
 - `POST /api/v1/reports/generate?portfolio_id=1`

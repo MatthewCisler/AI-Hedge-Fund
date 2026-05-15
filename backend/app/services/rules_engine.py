@@ -1,6 +1,7 @@
 """Deterministic trade validation."""
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 
 from app.services.market_schedule import market_schedule_service
 
@@ -23,11 +24,19 @@ class RulesEngineService:
         quantity: float,
         estimated_price: float,
         average_volume: int,
+        asset_type: str = "stock",
         existing_position_value: float = 0,
+        daily_trade_count: int = 0,
         recent_trade_exists: bool = False,
     ) -> RuleValidationResult:
         reasons: list[str] = []
         queue_for_next_open = False
+
+        if not ticker.replace(".", "").replace("-", "").isalnum() or not ticker.isupper():
+            reasons.append("Ticker must be an uppercase U.S. stock or ETF symbol.")
+
+        if side not in {"buy", "sell"}:
+            reasons.append("Only buy and sell market orders are supported.")
 
         if not market_schedule_service.is_market_open():
             if getattr(rules, "allow_queued_after_hours", False):
@@ -38,6 +47,12 @@ class RulesEngineService:
 
         if average_volume < getattr(rules, "minimum_liquidity_volume", 0):
             reasons.append("Liquidity rule failed.")
+
+        if asset_type == "etf" and not getattr(rules, "etf_allowed", True):
+            reasons.append("ETF trades are disabled for this portfolio.")
+
+        if daily_trade_count >= getattr(rules, "max_daily_trades", 0):
+            reasons.append("Maximum daily trade count reached.")
 
         projected_trade_value = estimated_price * quantity
         portfolio_value = float(getattr(portfolio, "current_value", 0) or 0) or float(
@@ -55,6 +70,9 @@ class RulesEngineService:
 
         approved = not reasons or (queue_for_next_open and reasons == ["Market closed. Trade can be queued for next open."])
         return RuleValidationResult(approved=approved, queue_for_next_open=queue_for_next_open, reasons=reasons)
+
+    def cooldown_cutoff(self, minutes: int) -> datetime:
+        return market_schedule_service.now_ct() - timedelta(minutes=minutes)
 
 
 rules_engine_service = RulesEngineService()

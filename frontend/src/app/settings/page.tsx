@@ -1,7 +1,10 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard } from "@/components/cards";
+import { fetchRiskDefaults } from "@/lib/api";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const defaults = await fetchRiskDefaults();
+
   return (
     <AppLayout>
       <div className="pageHeader">
@@ -10,32 +13,22 @@ export default function SettingsPage() {
           <h1>Risk profile and execution constraints</h1>
         </div>
       </div>
-      <SectionCard title="Portfolio rules" subtitle="Editable per user and per portfolio">
-        <form className="settingsForm">
-          <label>
-            Max position size %
-            <input type="number" defaultValue={10} />
-          </label>
-          <label>
-            Max daily trades
-            <input type="number" defaultValue={3} />
-          </label>
-          <label>
-            Rebalance threshold
-            <input type="number" defaultValue={5} />
-          </label>
-          <label>
-            Sector concentration limit
-            <input type="number" defaultValue={25} />
-          </label>
-          <label>
-            Minimum liquidity volume
-            <input type="number" defaultValue={500000} />
-          </label>
-          <button type="submit" className="button primary">
-            Save rules
-          </button>
-        </form>
+      <SectionCard title="Risk profile defaults" subtitle="Portfolio rules are editable through the API per portfolio">
+        <div className="profileGrid">
+          {Object.entries(defaults).map(([profile, rules]) => (
+            <div key={profile} className="profilePanel">
+              <h3>{profile}</h3>
+              <div className="ruleList">
+                {Object.entries(rules).map(([name, value]) => (
+                  <div key={name} className="listRow">
+                    <span>{name.replaceAll("_", " ")}</span>
+                    <strong>{String(value)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </SectionCard>
     </AppLayout>
   );

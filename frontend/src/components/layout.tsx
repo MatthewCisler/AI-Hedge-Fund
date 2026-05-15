@@ -9,6 +9,8 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/settings", label: "Rules" },
   { href: "/trades", label: "Trades" },
+  { href: "/ai", label: "AI Decisions" },
+  { href: "/benchmarks", label: "Benchmarks" },
   { href: "/reports", label: "Reports" },
 ];
 

@@ -25,6 +25,8 @@ class AIDecisionResponse(ORMModel):
     action_suggestion: str
     confidence_score: float
     explanation: str
+    input_snapshot: dict | None = None
+    rules_result: dict | None = None
     created_at: datetime
 
 
@@ -36,6 +38,17 @@ class DailyReportSummary(ORMModel):
     summary: dict
 
 
+class BenchmarkSnapshotResponse(ORMModel):
+    id: int
+    portfolio_id: int
+    benchmark_symbol: str
+    snapshot_date: date
+    initial_value: float
+    current_value: float
+    daily_return_pct: float
+    total_return_pct: float
+
+
 class DashboardResponse(ORMModel):
     portfolios: list[PortfolioSummary]
     queued_trades: list[QueuedTradeResponse]
@@ -43,3 +56,4 @@ class DashboardResponse(ORMModel):
     recent_news: list[NewsArticleResponse]
     recent_ai_decisions: list[AIDecisionResponse]
     latest_reports: list[DailyReportSummary]
+    benchmarks: list[BenchmarkSnapshotResponse]

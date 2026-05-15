@@ -8,6 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.logging import configure_logging
+from app.db.base import Base
+from app.db.session import engine
+import app.models  # noqa: F401
 from app.jobs.scheduler import scheduler_service
 
 configure_logging()
@@ -15,6 +18,7 @@ configure_logging()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    Base.metadata.create_all(bind=engine)
     scheduler_service.start()
     try:
         yield

@@ -1,6 +1,9 @@
 """Daily report endpoints."""
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user_id, get_db
@@ -28,6 +31,21 @@ def get_report(
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
     return report
+
+
+@router.get("/{report_id}/csv")
+def download_report_csv(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+) -> FileResponse:
+    report = report_service.get_report(db, user_id, report_id)
+    if not report or not report.csv_path:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report CSV not found.")
+    path = Path(report.csv_path)
+    if not path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report CSV file missing.")
+    return FileResponse(path, media_type="text/csv", filename=path.name)
 
 
 @router.post("/generate", response_model=DailyReportResponse, status_code=status.HTTP_201_CREATED)

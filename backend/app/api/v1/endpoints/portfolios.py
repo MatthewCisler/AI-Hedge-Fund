@@ -11,6 +11,8 @@ from app.schemas.portfolio import (
     PortfolioRuleUpdate,
     PortfolioSummary,
 )
+from app.schemas.dashboard import BenchmarkSnapshotResponse
+from app.services.benchmark_service import benchmark_service
 from app.services.portfolio_service import portfolio_service
 
 router = APIRouter()
@@ -55,3 +57,27 @@ def update_rules(
         return portfolio_service.update_rules(db, user_id, portfolio_id, payload)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get("/{portfolio_id}/benchmarks", response_model=list[BenchmarkSnapshotResponse])
+def list_benchmarks(
+    portfolio_id: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+) -> list[BenchmarkSnapshotResponse]:
+    portfolio = portfolio_service.get_for_user(db, user_id, portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found.")
+    return benchmark_service.list_for_portfolio(db, portfolio_id)
+
+
+@router.post("/{portfolio_id}/benchmarks/refresh", response_model=list[BenchmarkSnapshotResponse])
+def refresh_benchmarks(
+    portfolio_id: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+) -> list[BenchmarkSnapshotResponse]:
+    portfolio = portfolio_service.get_for_user(db, user_id, portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found.")
+    return benchmark_service.refresh_for_portfolio(db, portfolio)

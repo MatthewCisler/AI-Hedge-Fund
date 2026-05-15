@@ -23,10 +23,17 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24
 
     alpaca_base_url: str = "https://paper-api.alpaca.markets"
+    alpaca_data_url: str = "https://data.alpaca.markets"
     alpaca_api_key: str = "paper-key"
     alpaca_api_secret: str = "paper-secret"
 
-    local_ai_provider: str = "stub-local-llm"
+    local_ai_provider: str = "ollama"
+    ollama_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen3:8b"
+    news_rss_sources: list[str] = [
+        "https://finance.yahoo.com/news/rssindex",
+        "https://feeds.marketwatch.com/marketwatch/topstories/",
+    ]
     market_timezone: str = "America/Chicago"
     market_open_hour_ct: int = 8
     market_open_minute_ct: int = 30
