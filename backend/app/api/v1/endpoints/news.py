@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("", response_model=list[NewsArticleResponse])
-def ingest_news(
+async def ingest_news(
     tickers: list[str] | None = Query(default=None),
     db: Session = Depends(get_db),
     _: int = Depends(get_current_user_id),

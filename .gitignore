@@ -1,6 +1,8 @@
 .DS_Store
 .env
 .env.*
+!.env.example
+!backend/.env.example
 __pycache__/
 .pytest_cache/
 .mypy_cache/
@@ -10,6 +12,7 @@ backend/.venv/
 frontend/.next/
 frontend/node_modules/
 frontend/.env.local
+backend/generated_reports/
 *.pyc
 *.pyo
 *.pyd

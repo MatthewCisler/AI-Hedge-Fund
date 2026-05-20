@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard } from "@/components/cards";
+import { ActionButton } from "@/components/action-button";
 import { fetchOrders, fetchQueuedTrades, fetchTrades } from "@/lib/api";
 
 export default async function TradesPage() {
@@ -11,6 +12,9 @@ export default async function TradesPage() {
         <div>
           <p className="eyebrow">Trades</p>
           <h1>Orders, fills, and queued activity</h1>
+        </div>
+        <div className="pageActions">
+          <ActionButton label="Run Queued Orders" path="/jobs/queued-orders" variant="primary" />
         </div>
       </div>
       <div className="dashboardGrid">

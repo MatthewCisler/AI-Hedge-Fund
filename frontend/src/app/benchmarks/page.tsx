@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard, StatCard } from "@/components/cards";
+import { ActionButton } from "@/components/action-button";
 import { fetchDashboard } from "@/lib/api";
 
 export default async function BenchmarksPage() {
@@ -17,6 +18,11 @@ export default async function BenchmarksPage() {
           <p className="eyebrow">Benchmarks</p>
           <h1>AI versus the market</h1>
         </div>
+        {portfolio ? (
+          <div className="pageActions">
+            <ActionButton label="Refresh Benchmarks" path={`/portfolios/${portfolio.id}/benchmarks/refresh`} variant="primary" />
+          </div>
+        ) : null}
       </div>
 
       <div className="statGrid">

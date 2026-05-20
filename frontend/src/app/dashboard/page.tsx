@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard, StatCard } from "@/components/cards";
+import { PortfolioSwitcher } from "@/components/portfolio-switcher";
 import { fetchDashboard } from "@/lib/api";
 
 export default async function DashboardPage() {
@@ -18,7 +19,9 @@ export default async function DashboardPage() {
         <div>
           <p className="eyebrow">Dashboard</p>
           <h1>Portfolio command center</h1>
+          <p className="muted">Demo Mode is used automatically when live market or AI services are unavailable.</p>
         </div>
+        <PortfolioSwitcher portfolios={dashboard?.portfolios ?? []} selectedId={firstPortfolio?.id} />
       </div>
 
       <div className="statGrid">
@@ -38,7 +41,9 @@ export default async function DashboardPage() {
             {dashboard?.portfolios.map((portfolio) => (
               <div key={portfolio.id} className="listRow">
                 <div>
-                  <strong>{portfolio.name}</strong>
+                  <a href={`/portfolios/${portfolio.id}`}>
+                    <strong>{portfolio.name}</strong>
+                  </a>
                   <p className="muted">{portfolio.risk_profile}</p>
                 </div>
                 <div className="alignRight">

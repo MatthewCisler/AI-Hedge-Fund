@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=TokenResponse)
-def register(payload: UserRegister, db: Session = Depends(get_db)) -> TokenResponse:
+async def register(payload: UserRegister, db: Session = Depends(get_db)) -> TokenResponse:
     try:
         return auth_service.register(db, payload)
     except ValueError as exc:
@@ -19,7 +19,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)) -> TokenRespo
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: UserLogin, db: Session = Depends(get_db)) -> TokenResponse:
+async def login(payload: UserLogin, db: Session = Depends(get_db)) -> TokenResponse:
     try:
         return auth_service.login(db, payload)
     except ValueError as exc:

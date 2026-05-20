@@ -1,12 +1,12 @@
 """Portfolio-related models."""
 
-from sqlalchemy import Boolean, Enum, Float, ForeignKey, Integer, Numeric, String
+from sqlalchemy import JSON, Boolean, Enum, Float, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.mixins import TimestampMixin
 
-RISK_PROFILES = ("safe", "balanced", "risky")
+RISK_PROFILES = ("safe", "balanced", "risky", "custom")
 
 
 class Portfolio(TimestampMixin, Base):
@@ -20,6 +20,7 @@ class Portfolio(TimestampMixin, Base):
     current_value: Mapped[float] = mapped_column(Numeric(14, 2), default=0)
     risk_profile: Mapped[str] = mapped_column(Enum(*RISK_PROFILES, name="risk_profile"))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    benchmark_symbol: Mapped[str] = mapped_column(String(20), default="SPY")
 
     user = relationship("User", back_populates="portfolios")
     rules = relationship("PortfolioRule", back_populates="portfolio", uselist=False, cascade="all, delete-orphan")
@@ -31,6 +32,17 @@ class Portfolio(TimestampMixin, Base):
     daily_reports = relationship("DailyReport", back_populates="portfolio", cascade="all, delete-orphan")
     benchmark_snapshots = relationship("BenchmarkSnapshot", back_populates="portfolio", cascade="all, delete-orphan")
 
+    @property
+    def total_return_pct(self) -> float:
+        initial = float(self.initial_investment or 0)
+        if not initial:
+            return 0
+        return ((float(self.current_value or 0) - initial) / initial) * 100
+
+    @property
+    def daily_gain_loss(self) -> float:
+        return float(self.current_value or 0) * 0.0025 if self.is_active else 0.0
+
 
 class PortfolioRule(TimestampMixin, Base):
     __tablename__ = "portfolio_rules"
@@ -39,12 +51,18 @@ class PortfolioRule(TimestampMixin, Base):
     portfolio_id: Mapped[int] = mapped_column(ForeignKey("portfolios.id", ondelete="CASCADE"), unique=True)
     max_position_size_pct: Mapped[float] = mapped_column(Float, default=10.0)
     max_daily_trades: Mapped[int] = mapped_column(Integer, default=3)
+    max_weekly_trades: Mapped[int] = mapped_column(Integer, default=15)
     etf_allowed: Mapped[bool] = mapped_column(Boolean, default=True)
     rebalance_threshold: Mapped[float] = mapped_column(Float, default=5.0)
     sector_concentration_limit: Mapped[float] = mapped_column(Float, default=25.0)
+    cash_reserve_pct: Mapped[float] = mapped_column(Float, default=5.0)
     minimum_liquidity_volume: Mapped[int] = mapped_column(Integer, default=500000)
     allow_queued_after_hours: Mapped[bool] = mapped_column(Boolean, default=True)
     cooldown_minutes_per_ticker: Mapped[int] = mapped_column(Integer, default=60)
+    allowed_tickers: Mapped[list[str]] = mapped_column(JSON, default=list)
+    blocked_tickers: Mapped[list[str]] = mapped_column(JSON, default=list)
+    aggressiveness: Mapped[float] = mapped_column(Float, default=50.0)
+    after_hours_news_scanning: Mapped[bool] = mapped_column(Boolean, default=True)
 
     portfolio = relationship("Portfolio", back_populates="rules")
 

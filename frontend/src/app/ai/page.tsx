@@ -1,9 +1,12 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard, StatCard } from "@/components/cards";
-import { fetchAIDecisions } from "@/lib/api";
+import { ActionButton } from "@/components/action-button";
+import { fetchAIDecisions, fetchDashboard } from "@/lib/api";
 
 export default async function AIDecisionsPage() {
   const decisions = await fetchAIDecisions();
+  const dashboard = await fetchDashboard();
+  const portfolio = dashboard?.portfolios[0];
   const averageConfidence = decisions.length
     ? decisions.reduce((total, decision) => total + decision.confidence_score, 0) / decisions.length
     : 0;
@@ -14,6 +17,10 @@ export default async function AIDecisionsPage() {
         <div>
           <p className="eyebrow">AI decisions</p>
           <h1>Local model research log</h1>
+        </div>
+        <div className="pageActions">
+          {portfolio ? <ActionButton label="Run AI Analysis" path={`/ai/analyze?portfolio_id=${portfolio.id}`} variant="primary" /> : null}
+          <ActionButton label="Debug Sample" path="/ai/debug-sample" />
         </div>
       </div>
 

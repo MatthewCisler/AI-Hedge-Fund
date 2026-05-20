@@ -8,5 +8,5 @@ router = APIRouter()
 
 
 @router.get("/risk-profile-defaults")
-def risk_profile_defaults() -> dict:
+async def risk_profile_defaults() -> dict:
     return RISK_PROFILE_DEFAULTS

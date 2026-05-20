@@ -7,6 +7,7 @@ type LayoutProps = {
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/portfolios", label: "Portfolios" },
   { href: "/settings", label: "Rules" },
   { href: "/trades", label: "Trades" },
   { href: "/ai", label: "AI Decisions" },

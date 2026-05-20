@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("", response_model=DashboardResponse)
-def get_dashboard(
+async def get_dashboard(
     db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)
 ) -> DashboardResponse:
     return dashboard_service.build(db, user_id)

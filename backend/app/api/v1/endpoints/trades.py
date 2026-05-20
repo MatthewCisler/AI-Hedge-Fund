@@ -11,28 +11,28 @@ router = APIRouter()
 
 
 @router.get("/orders", response_model=list[OrderResponse])
-def list_orders(
+async def list_orders(
     db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)
 ) -> list[OrderResponse]:
     return trade_service.list_orders(db, user_id)
 
 
 @router.get("/queued", response_model=list[QueuedTradeResponse])
-def list_queued(
+async def list_queued(
     db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)
 ) -> list[QueuedTradeResponse]:
     return trade_service.list_queued(db, user_id)
 
 
 @router.get("", response_model=list[TradeResponse])
-def list_trades(
+async def list_trades(
     db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)
 ) -> list[TradeResponse]:
     return trade_service.list_trades(db, user_id)
 
 
 @router.post("/orders", response_model=OrderResponse | QueuedTradeResponse, status_code=status.HTTP_201_CREATED)
-def create_order(
+async def create_order(
     payload: OrderCreate,
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),

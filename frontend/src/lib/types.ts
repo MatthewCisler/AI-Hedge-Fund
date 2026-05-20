@@ -1,4 +1,4 @@
-export type RiskProfile = "safe" | "balanced" | "risky";
+export type RiskProfile = "safe" | "balanced" | "risky" | "custom";
 
 export type PortfolioSummary = {
   id: number;
@@ -8,6 +8,50 @@ export type PortfolioSummary = {
   current_value: number;
   risk_profile: RiskProfile;
   is_active: boolean;
+  benchmark_symbol: string;
+  daily_gain_loss: number;
+  total_return_pct: number;
+};
+
+export type PortfolioRule = {
+  portfolio_id: number;
+  max_position_size_pct: number;
+  max_daily_trades: number;
+  max_weekly_trades: number;
+  etf_allowed: boolean;
+  rebalance_threshold: number;
+  sector_concentration_limit: number;
+  cash_reserve_pct: number;
+  minimum_liquidity_volume: number;
+  allow_queued_after_hours: boolean;
+  cooldown_minutes_per_ticker: number;
+  allowed_tickers: string[];
+  blocked_tickers: string[];
+  aggressiveness: number;
+  after_hours_news_scanning: boolean;
+};
+
+export type Position = {
+  id: number;
+  ticker: string;
+  asset_name: string | null;
+  asset_type: string;
+  quantity: number;
+  average_cost: number;
+  market_price: number;
+  market_value: number;
+  unrealized_pnl: number;
+  sector: string | null;
+};
+
+export type PortfolioDetail = PortfolioSummary & {
+  rules: PortfolioRule | null;
+  positions: Position[];
+  queued_trades: QueuedTrade[];
+  trades: Trade[];
+  ai_decisions: AIDecision[];
+  daily_reports: DailyReport[];
+  benchmark_snapshots: BenchmarkSnapshot[];
 };
 
 export type BenchmarkSnapshot = {

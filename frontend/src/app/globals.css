@@ -95,6 +95,9 @@ label {
   padding: 0.9rem 1.25rem;
   border-radius: 8px;
   font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
 }
 
 .button.primary {
@@ -116,13 +119,17 @@ label {
 }
 
 .authCard input,
-.settingsForm input {
+.settingsForm input,
+.settingsForm select,
+.switcher select {
   width: 100%;
   margin-top: 0.4rem;
   padding: 0.85rem 1rem;
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface-strong);
+  color: var(--ink);
+  font: inherit;
 }
 
 .shell {
@@ -157,6 +164,22 @@ label {
 
 .pageHeader {
   margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.pageActions,
+.actionControl {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.switcher {
+  min-width: 260px;
 }
 
 .statGrid,
@@ -221,6 +244,12 @@ label {
 .metricGrid,
 .profileGrid {
   flex-wrap: wrap;
+}
+
+.metricGrid.compact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
 }
 
 .metricTile,
@@ -299,6 +328,92 @@ label {
   text-transform: capitalize;
 }
 
+.portfolioGrid,
+.allocationList,
+.formGrid,
+.toggleGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.portfolioGrid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.portfolioCard,
+.detailBox {
+  display: block;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.portfolioCard:hover {
+  border-color: rgba(20, 83, 45, 0.32);
+}
+
+.cardTopline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.6rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(180, 35, 24, 0.1);
+  color: var(--negative);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.statusPill.active {
+  background: rgba(15, 118, 110, 0.12);
+  color: var(--positive);
+}
+
+.formGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.toggleGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.checkboxLine {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.checkboxLine input {
+  width: auto;
+  margin: 0;
+}
+
+.bar {
+  height: 0.65rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(31, 36, 48, 0.08);
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.detailBox summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
 @media (max-width: 960px) {
   .shell {
     flex-direction: column;
@@ -317,8 +432,14 @@ label {
     grid-template-columns: 1fr;
   }
 
+  .pageHeader {
+    flex-direction: column;
+  }
+
   .tableHeader,
-  .tableRow {
+  .tableRow,
+  .formGrid,
+  .toggleGrid {
     grid-template-columns: 1fr;
   }
 }
