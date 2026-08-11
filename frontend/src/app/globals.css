@@ -414,6 +414,39 @@ label {
   font-weight: 700;
 }
 
+.sideNav { margin: 1.5rem 0; }
+.sessionPanel, .workflowStack { display: grid; gap: 0.75rem; }
+.modePill { width: fit-content; border-radius: 999px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700; }
+.modePill.demo { background: #fff3cd; color: #7a5200; }
+.modePill.paper { background: rgba(15, 118, 110, 0.12); color: var(--positive); }
+.button:disabled { opacity: 0.55; cursor: not-allowed; }
+.formMessage { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.formMessage.error { color: var(--negative); }
+.formMessage.success { color: var(--positive); }
+.authCard a { color: var(--accent); font-weight: 700; }
+.safetyNotice, .emptyState { border: 1px solid rgba(20, 83, 45, 0.18); background: rgba(217, 249, 157, 0.22); border-radius: 8px; padding: 0.9rem 1rem; color: var(--muted); }
+.recommendationGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; }
+.recommendationCard { display: grid; text-align: left; gap: 0.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-strong); color: var(--ink); cursor: pointer; font: inherit; }
+.recommendationCard.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(20, 83, 45, 0.1); }
+.recommendationCard small { color: var(--muted); }
+.orderForm { margin: 1rem 0; }
+.warningBanner, .successBanner { display: grid; gap: 0.35rem; border-radius: 8px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+.warningBanner { background: #fff3cd; border: 1px solid #e8c85b; color: #684b00; }
+.successBanner { background: rgba(15, 118, 110, 0.1); border: 1px solid rgba(15, 118, 110, 0.3); color: var(--positive); }
+.decisionTopline { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.providerPill { border-radius: 999px; padding: 0.2rem 0.55rem; font-size: 0.75rem; font-weight: 700; }
+.providerPill.ollama { background: rgba(15, 118, 110, 0.12); color: var(--positive); }
+.providerPill.fallback { background: #fff3cd; color: #684b00; }
+.fallbackDecision { border-left: 3px solid #e8c85b; padding-left: 1rem; }
+.statusGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.statusGrid > div { display: grid; gap: 0.35rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-strong); }
+.statusGrid span { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.statusText { text-transform: capitalize; }
+.statusText.online, .statusText.connected, .statusText.open { color: var(--positive); }
+.statusText.offline, .statusText.disconnected, .statusText.error { color: var(--negative); }
+.statusText.demo, .statusText.closed { color: #7a5200; }
+.executionPreview { display: grid; gap: 1rem; padding: 1rem; border: 2px solid rgba(15, 118, 110, 0.35); border-radius: 8px; background: rgba(15, 118, 110, 0.06); }
+
 @media (max-width: 960px) {
   .shell {
     flex-direction: column;
@@ -442,4 +475,6 @@ label {
   .toggleGrid {
     grid-template-columns: 1fr;
   }
+
+  .statusGrid { grid-template-columns: 1fr 1fr; }
 }

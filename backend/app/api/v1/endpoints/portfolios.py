@@ -111,9 +111,13 @@ async def run_portfolio_analysis(
     if not portfolio:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found.")
     decisions = ai_decision_service.run_analysis(db, portfolio_id)
+    used_fallback = bool(decisions and decisions[0].provider == "deterministic_fallback")
     return PortfolioActionResponse(
-        status="ok",
-        message="AI analysis completed with local/demo fallback when live services are unavailable.",
+        status="fallback" if used_fallback else "ok",
+        message=(
+            "Ollama was unavailable; a non-actionable deterministic safety result was recorded."
+            if used_fallback else "Ollama analysis completed."
+        ),
         result=[{"ticker": item.ticker, "action": item.action_suggestion, "confidence": item.confidence_score} for item in decisions],
     )
 

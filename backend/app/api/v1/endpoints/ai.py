@@ -12,6 +12,12 @@ from app.services.portfolio_service import portfolio_service
 router = APIRouter()
 
 
+@router.get("/status")
+async def ai_status(_: int = Depends(get_current_user_id)) -> dict:
+    """Return a safe operational status without running analysis."""
+    return ai_service.status()
+
+
 @router.get("/decisions", response_model=list[AIDecisionResponse])
 async def list_ai_decisions(
     db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)
@@ -37,7 +43,7 @@ async def run_ai_analysis(
 @router.post("/debug-sample")
 async def debug_sample_analysis(_: int = Depends(get_current_user_id)) -> dict:
     """Exercise the local AI adapter with deterministic sample context."""
-    suggestions = ai_service.analyze(
+    result = ai_service.analyze(
         portfolio_state={
             "name": "Demo Paper Portfolio",
             "risk_profile": "balanced",
@@ -56,6 +62,10 @@ async def debug_sample_analysis(_: int = Depends(get_current_user_id)) -> dict:
         price_context={"source": "debug-sample"},
     )
     return {
-        "provider": ai_service.__class__.__name__,
-        "suggestions": [suggestion.__dict__ for suggestion in suggestions],
+        "provider": result.provider,
+        "analysis_status": result.analysis_status,
+        "failure_category": result.failure_category,
+        "model_name": result.model_name,
+        "operational_message": result.operational_message,
+        "suggestions": [suggestion.__dict__ for suggestion in result.suggestions],
     }

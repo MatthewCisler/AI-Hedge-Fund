@@ -10,6 +10,7 @@ __pycache__/
 .venv/
 backend/.venv/
 frontend/.next/
+frontend/*.tsbuildinfo
 frontend/node_modules/
 frontend/.env.local
 backend/generated_reports/

@@ -86,6 +86,9 @@ export type Order = {
   requested_price: number | null;
   broker_order_id: string | null;
   rejection_reason: string | null;
+  ai_decision_id: number | null;
+  submitted_at: string | null;
+  filled_at: string | null;
 };
 
 export type Trade = {
@@ -116,6 +119,11 @@ export type AIDecision = {
   action_suggestion: string;
   confidence_score: number;
   explanation: string;
+  provider: "ollama" | "deterministic_fallback" | "legacy";
+  model_name: string | null;
+  analysis_status: "completed" | "fallback" | "failed";
+  failure_category: string | null;
+  analysis_run_id: string | null;
   input_snapshot: Record<string, unknown> | null;
   rules_result: Record<string, unknown> | null;
   created_at: string;
@@ -145,4 +153,17 @@ export type DashboardData = {
   recent_ai_decisions: AIDecision[];
   latest_reports: DailyReport[];
   benchmarks: BenchmarkSnapshot[];
+};
+
+export type UserSession = {
+  id: number;
+  email: string;
+  full_name: string | null;
+  broker_mode: "demo-simulation" | "alpaca-paper";
+};
+
+export type SystemStatus = {
+  ai: { status: "online" | "offline" | "error"; provider: string; model_name: string | null; failure_category?: string | null };
+  broker: { status: "connected" | "disconnected" | "demo"; connected: boolean; mode: string; buying_power?: number | null; cash?: number | null; portfolio_value?: number | null; failure_category?: string | null };
+  market: { status: "open" | "closed"; timezone: string; checked_at: string };
 };

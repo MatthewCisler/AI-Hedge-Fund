@@ -13,6 +13,7 @@ from app.models.news_article import NewsArticle
 from app.models.portfolio import Portfolio, PortfolioRule, Position
 from app.models.user import User
 from app.services.benchmark_service import benchmark_service
+from app.core.security import hash_password
 from app.services.defaults import RISK_PROFILE_DEFAULTS
 
 
@@ -50,6 +51,36 @@ def _ensure_incremental_columns() -> None:
         if column_name not in rule_columns:
             statements.append(f"ALTER TABLE portfolio_rules ADD COLUMN {column_name} {definition}")
 
+    if "ai_decisions" in table_names:
+        ai_columns = {column["name"] for column in inspector.get_columns("ai_decisions")}
+        ai_additions = {
+            "provider": "VARCHAR(40) DEFAULT 'legacy'",
+            "model_name": "VARCHAR(120)",
+            "analysis_status": "VARCHAR(40) DEFAULT 'completed'",
+            "failure_category": "VARCHAR(40)",
+            "analysis_run_id": "VARCHAR(36)",
+        }
+        for column_name, definition in ai_additions.items():
+            if column_name not in ai_columns:
+                statements.append(f"ALTER TABLE ai_decisions ADD COLUMN {column_name} {definition}")
+        statements.append(
+            "UPDATE ai_decisions SET provider = 'deterministic_fallback', "
+            "analysis_status = 'fallback', failure_category = 'unavailable' "
+            "WHERE explanation = 'Fallback local result. Ollama was unavailable or returned invalid JSON.'"
+        )
+
+    if "orders" in table_names:
+        order_columns = {column["name"] for column in inspector.get_columns("orders")}
+        order_additions = {
+            "ai_decision_id": "INTEGER",
+            "submitted_at": "DATETIME",
+            "filled_at": "DATETIME",
+        }
+        for column_name, definition in order_additions.items():
+            if column_name not in order_columns:
+                statements.append(f"ALTER TABLE orders ADD COLUMN {column_name} {definition}")
+        statements.append("UPDATE orders SET submitted_at = created_at WHERE submitted_at IS NULL")
+
     if not statements:
         return
     with engine.begin() as connection:
@@ -58,17 +89,19 @@ def _ensure_incremental_columns() -> None:
 
 
 def seed_demo_data(db: Session) -> None:
-    """Seed enough local data for the X-User-Id: 1 demo flow to work."""
+    """Seed enough local data for the authenticated demo flow to work."""
     user = db.get(User, DEMO_USER_ID)
     if not user:
         user = User(
             id=DEMO_USER_ID,
             email="demo@example.com",
-            password_hash="local-demo-auth-stub",
+            password_hash=hash_password("demo-password"),
             full_name="Demo User",
         )
         db.add(user)
         db.flush()
+    elif user.password_hash == "local-demo-auth-stub":
+        user.password_hash = hash_password("demo-password")
 
     portfolio = db.scalar(select(Portfolio).where(Portfolio.user_id == user.id).limit(1))
     if not portfolio:

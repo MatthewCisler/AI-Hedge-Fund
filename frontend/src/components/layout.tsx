@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
+import { fetchSession } from "@/lib/api";
+import { LogoutButton } from "@/components/logout-button";
 
 type LayoutProps = {
   children: ReactNode;
@@ -15,7 +17,8 @@ const navItems = [
   { href: "/reports", label: "Reports" },
 ];
 
-export function AppLayout({ children }: LayoutProps) {
+export async function AppLayout({ children }: LayoutProps) {
+  const session = await fetchSession();
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -26,13 +29,20 @@ export function AppLayout({ children }: LayoutProps) {
             Multi-user paper portfolios with local AI research and deterministic controls.
           </p>
         </div>
-        <nav>
+        <nav className="sideNav">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href} className="navLink">
               {item.label}
             </Link>
           ))}
         </nav>
+        <div className="sessionPanel">
+          <span className={`modePill ${session?.broker_mode === "alpaca-paper" ? "paper" : "demo"}`}>
+            {session?.broker_mode === "alpaca-paper" ? "Alpaca paper" : "Demo simulation"}
+          </span>
+          <small>{session?.full_name || session?.email || "Authenticated user"}</small>
+          <LogoutButton />
+        </div>
       </aside>
       <main className="content">{children}</main>
     </div>

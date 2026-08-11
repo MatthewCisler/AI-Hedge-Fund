@@ -1,10 +1,11 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard } from "@/components/cards";
 import { ActionButton } from "@/components/action-button";
-import { fetchRiskDefaults } from "@/lib/api";
+import { fetchDashboard, fetchRiskDefaults } from "@/lib/api";
 
 export default async function SettingsPage() {
-  const defaults = await fetchRiskDefaults();
+  const [defaults, dashboard] = await Promise.all([fetchRiskDefaults(), fetchDashboard()]);
+  const portfolio = dashboard?.portfolios[0];
 
   return (
     <AppLayout>
@@ -14,9 +15,10 @@ export default async function SettingsPage() {
           <h1>Risk profile and execution constraints</h1>
         </div>
         <div className="pageActions">
-          <ActionButton label="Run Intraday Analysis" path="/jobs/intraday-analysis" />
-          <ActionButton label="Run Evening Scan" path="/jobs/evening-scan" />
-          <ActionButton label="Daily Reports" path="/jobs/daily-reports" />
+          <ActionButton label="Test Ollama connection" path="/ai/status" method="GET" />
+          <ActionButton label="Test Alpaca paper connection" path="/trades/broker/status" method="GET" />
+          <ActionButton label="Refresh paper account" path="/trades/broker/account" method="GET" />
+          {portfolio ? <ActionButton label="Generate one AI recommendation" path={`/ai/analyze?portfolio_id=${portfolio.id}`} /> : null}
         </div>
       </div>
       <SectionCard title="Risk profile defaults" subtitle="Portfolio rules are editable through the API per portfolio">

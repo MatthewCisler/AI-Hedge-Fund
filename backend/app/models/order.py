@@ -1,6 +1,8 @@
 """Order and trade models."""
 
-from sqlalchemy import Enum, Float, ForeignKey, JSON, String, Text
+from datetime import datetime
+
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, JSON, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -25,6 +27,9 @@ class Order(TimestampMixin, Base):
     requested_price: Mapped[float | None] = mapped_column(Float, nullable=True)
     submitted_payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ai_decision_id: Mapped[int | None] = mapped_column(ForeignKey("ai_decisions.id"), nullable=True, index=True)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=True)
+    filled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     portfolio = relationship("Portfolio", back_populates="orders")
     trade = relationship("Trade", back_populates="order", uselist=False)

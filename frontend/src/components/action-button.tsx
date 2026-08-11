@@ -1,41 +1,37 @@
 "use client";
 
 import { useState } from "react";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+import { useRouter } from "next/navigation";
+import { clientApi } from "@/lib/client-api";
 
 type ActionButtonProps = {
   label: string;
   path: string;
-  method?: "POST" | "DELETE";
+  method?: "GET" | "POST" | "DELETE";
   variant?: "primary" | "secondary";
 };
 
 export function ActionButton({ label, path, method = "POST", variant = "secondary" }: ActionButtonProps) {
   const [status, setStatus] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+  const router = useRouter();
 
   async function runAction() {
-    setStatus("Running...");
-    try {
-      const response = await fetch(`${API_BASE_URL}${path}`, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-Id": "1",
-        },
-      });
-      setStatus(response.ok ? "Done. Refresh to see updates." : `Failed: ${response.status}`);
-    } catch {
-      setStatus("Failed to reach backend.");
-    }
+    setBusy(true);
+    setStatus("Running…");
+    const result = await clientApi<{ message?: string; status?: string; failure_category?: string; mode?: string }>(path, { method });
+    const summary = result.ok ? [result.data?.status, result.data?.mode, result.data?.failure_category].filter(Boolean).join(" · ") : "";
+    setStatus(result.ok ? (result.data?.message ?? (summary || "Completed successfully.")) : result.error);
+    setBusy(false);
+    if (result.ok) router.refresh();
   }
 
   return (
     <div className="actionControl">
-      <button className={`button ${variant}`} type="button" onClick={runAction}>
+      <button className={`button ${variant}`} type="button" disabled={busy} onClick={runAction}>
         {label}
       </button>
-      {status ? <span className="muted">{status}</span> : null}
+      {status ? <span className={status.includes("failed") || status.includes("Failed") ? "formMessage error" : "formMessage"}>{status}</span> : null}
     </div>
   );
 }

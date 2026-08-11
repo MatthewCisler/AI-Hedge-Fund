@@ -56,22 +56,29 @@ Implemented:
 - Portfolio creation and editable rule defaults by risk profile
 - Order, trade, queued trade, AI decision, news, benchmark, report, and audit log models
 - FastAPI routes for auth, dashboard, portfolios, benchmarks, settings, trades, AI decisions, news, and reports
-- Ollama-backed AI service abstraction with a deterministic fallback when the local model is unavailable
+- JWT bearer authentication with active-user checks and strict user/portfolio isolation
+- Ollama-backed AI analysis with JSON-Schema output, strict validation, categorized failures, provider metadata, and deduplicated non-actionable fallback
 - RSS news ingestion that stores source, headline, URL, timestamp, summary, and inferred tickers
 - Alpaca paper-trading abstraction that refuses non-paper trading endpoints
+- Alpaca paper-order polling that records broker status and applies positions only after confirmed fills
 - Deterministic rules engine for cash, max position size, liquidity, daily trade count, ticker cooldown, ETF permission, and market-hours queueing
 - APScheduler jobs for intraday analysis, evening scans, market-open queued orders, and daily reports at about 3:10 PM Central
 - Next.js dashboard, portfolio management, portfolio tuning, rules, trades, AI decisions, benchmark comparison, and reports pages
+- End-to-end browser workflow from registration through user-confirmed paper-order submission
+- Two-stage AI execution preview: deterministic rule approval followed by explicit paper-order confirmation
+- Central-time AI decision timestamps, model/run metadata, and AI/order history linkage
+- AI, Alpaca paper broker, market, and portfolio status indicators
+- HttpOnly browser session cookie, protected application routes, logout, and authenticated API proxy
 - Local database initializer with demo user, portfolio, positions, news, AI decision, and benchmarks
 - Manual local job endpoints for intraday analysis, evening scans, queued orders, and reports
 - Built-in backend smoke tests using `unittest` and in-process ASGI requests
 
-Stubbed on purpose:
+Still intentionally incomplete:
 
-- Real JWT request auth middleware
 - Alembic migrations for production-grade schema upgrades
 - Full charting-library integration
 - Market calendar holiday awareness
+- Partial-fill accounting before an order reaches its final filled state
 
 ## Assumptions
 
@@ -80,11 +87,12 @@ Stubbed on purpose:
 - The app will run on a home server behind the user’s own network, reverse proxy, or VPN.
 - Commission-free enforcement will depend on the broker/account capabilities and should be verified at integration time.
 - The initial version uses APScheduler for simplicity, though Celery + Redis can be swapped in later if workload grows.
-- Auth routes currently issue tokens, but authenticated API access is temporarily stubbed with the `X-User-Id` header to keep the scaffold runnable while the rest of the system is wired up.
+- Browser sessions are stored in an HttpOnly, same-site cookie by Next.js. The browser never receives Alpaca credentials.
+- API authorization derives user identity only from a verified JWT subject; client-provided user IDs are ignored.
 
 ## Local setup
 
-The local demo path uses SQLite and does not require real Alpaca credentials. API calls use the temporary demo auth header `X-User-Id: 1`; CSV report downloads can also use `?user_id=1`.
+The local demo path uses SQLite and does not require real Alpaca credentials. Register through the browser, or log in to the seeded account with `demo@example.com` and `demo-password`. Direct API calls must use an access token from `/api/v1/auth/login` in an `Authorization: Bearer ...` header.
 
 ### Backend install
 
@@ -120,14 +128,26 @@ OLLAMA_MODEL=qwen3:8b
 PYTHONPATH=. python scripts/init_db.py
 ```
 
-6. Optional: start Ollama and pull the local model:
+6. Install Ollama on the backend host, pull the configured model, and start the service. On Linux:
 
 ```bash
+curl -fsSL https://ollama.com/install.sh | sh
 ollama pull qwen3:8b
-ollama serve
+sudo systemctl start ollama
+sudo systemctl status ollama
 ```
 
-If Ollama is not running, the backend logs a warning and returns deterministic fallback AI suggestions.
+If a system service is unavailable, run `ollama serve` in a separate terminal instead. Verify the model and API before starting the backend:
+
+```bash
+ollama list
+curl http://localhost:11434/api/tags
+curl http://localhost:11434/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"qwen3:8b","stream":false,"format":"json","messages":[{"role":"user","content":"Return {\"status\":\"ok\"} as JSON."}]}'
+```
+
+The response must contain non-empty JSON in `message.content`. The application sends a full JSON Schema in Ollama's `format` field and validates every returned field. If Ollama is unavailable or invalid, the UI shows a warning and stores at most one deduplicated, non-actionable deterministic hold observation instead of normal model recommendations.
 
 7. Start the backend:
 
@@ -148,6 +168,8 @@ Key backend environment variables:
 - `LOCAL_AI_PROVIDER=ollama`
 - `OLLAMA_URL=http://localhost:11434`
 - `OLLAMA_MODEL=qwen3:8b`
+- `OLLAMA_TIMEOUT_SECONDS=90`
+- `AI_DECISION_HISTORY_LIMIT=100`
 - `NEWS_RSS_SOURCES=[...]`
 - `MARKET_TIMEZONE=America/Chicago`
 
@@ -174,6 +196,37 @@ npm run dev
 
 Open `http://localhost:3000/dashboard`.
 
+### Ollama troubleshooting and remote hosts
+
+The backend process—not the browser—must be able to reach `OLLAMA_URL`.
+
+- `unavailable`: nothing is listening at the configured URL, DNS failed, or a firewall blocked the connection. Check `systemctl status ollama`, `journalctl -e -u ollama`, and `curl $OLLAMA_URL/api/tags` on the backend host.
+- `missing_model`: the server responded but does not have `OLLAMA_MODEL`. Run `ollama pull qwen3:8b` on the Ollama host and confirm it appears in `ollama list` or `/api/tags`.
+- `timeout`: generation exceeded `OLLAMA_TIMEOUT_SECONDS`. Increase it for slower CPU-only hosts or use a smaller model.
+- `http_error`: Ollama returned another non-success status. Inspect Ollama service logs.
+- `empty_response`, `invalid_response`, or `schema_validation`: the server answered, but its content was empty, malformed, or outside the required advisory schema. The backend log identifies the category without returning internal exception details to the browser.
+
+When Ollama runs on another machine, set the backend `.env` to that host's private LAN or Tailscale address, for example:
+
+```bash
+OLLAMA_URL=http://100.x.y.z:11434
+OLLAMA_MODEL=qwen3:8b
+OLLAMA_TIMEOUT_SECONDS=120
+```
+
+Ollama listens on loopback by default. Configure its service with `OLLAMA_HOST=0.0.0.0:11434` when remote access is required, restart it, and restrict port `11434` to the private LAN/VPN with a firewall. Do not expose an unauthenticated local Ollama endpoint to the public internet. Validate connectivity with `curl http://100.x.y.z:11434/api/tags` from the backend host, then restart Uvicorn so it reloads `.env`.
+
+The authenticated browser journey is:
+
+1. Register or log in.
+2. Create a portfolio and configure its deterministic rules.
+3. Open the portfolio and run AI analysis.
+4. Review action, reasoning, confidence, and pending rule state.
+5. Run the proposed order through the deterministic rules engine and review price, amount, cash, resulting position percentage, and approval reasons.
+6. Press `Execute Paper Trade` and confirm the paper-money warning. This is the only step that queues or submits the order.
+7. Review whether it was rejected, queued, submitted, or filled on the Trades page and inspect updated portfolio results.
+8. Configured Alpaca paper orders synchronize automatically every two minutes during market hours and can also be refreshed manually from Trades.
+
 ### Local network access
 
 Use your machine's LAN IP address in place of `YOUR_LAN_IP`.
@@ -199,7 +252,7 @@ Then open `http://YOUR_LAN_IP:3000/dashboard` from another device on the same ne
 ## Portfolio management
 
 - Use `/dashboard` to switch into a portfolio from the selector.
-- Use `/portfolios` to view all paper portfolios for the current `X-User-Id: 1` account and create new ones.
+- Use `/portfolios` to view and create paper portfolios belonging to the authenticated account.
 - Portfolio cards show risk profile, initial paper investment, current value, daily gain/loss, total return, benchmark comparison when available, and active/paused status.
 - Use `/portfolios/{id}` for holdings, allocation bars, queued trades, recent trades, AI decisions with reasoning, benchmark performance, matching news, latest report link, and action buttons.
 - Use `/portfolios/{id}/settings` or the Tuning section on the detail page to edit risk profile, trade limits, cash reserve, concentration, ticker allow/block lists, ETF permission, after-hours scanning, queueing behavior, aggressiveness, and active/paused state.
@@ -247,32 +300,24 @@ npm run build
 
 ## Manual local actions
 
-The frontend includes buttons for common demo actions:
+The frontend includes authenticated controls for common paper-trading actions:
 
 - AI Decisions: `Run AI Analysis`, `Debug Sample`
 - Benchmarks: `Refresh Benchmarks`
 - Reports: `Generate Report`
-- Trades: `Run Queued Orders`
-- Settings: `Run Intraday Analysis`, `Run Evening Scan`, `Daily Reports`
+- Trades: manually confirm a paper order and review rule rejections, queues, orders, and fills
 
-Equivalent API calls:
+Authenticate before making direct API calls. For example:
 
 ```bash
-curl -H 'X-User-Id: 1' http://localhost:8000/api/v1/dashboard
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/ai/analyze?portfolio_id=1'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/ai/debug-sample'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/portfolios/1/benchmarks/refresh'
-curl -X PATCH -H 'Content-Type: application/json' -H 'X-User-Id: 1' -d '{"risk_profile":"balanced"}' 'http://localhost:8000/api/v1/portfolios/1'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/portfolios/1/run-analysis'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/portfolios/1/rebalance'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/portfolios/1/generate-report'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/portfolios/1/pause'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/portfolios/1/resume'
-curl -X DELETE -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/portfolios/1/queued-trades'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/reports/generate?portfolio_id=1'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/jobs/intraday-analysis'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/jobs/evening-scan'
-curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/jobs/queued-orders'
+curl -X POST -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","password":"demo-password"}' \
+  http://localhost:8000/api/v1/auth/login
+
+# Copy access_token from the response, then:
+curl -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' http://localhost:8000/api/v1/dashboard
+curl -X POST -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  'http://localhost:8000/api/v1/ai/analyze?portfolio_id=1'
 ```
 
 ## Home server deployment notes
@@ -287,12 +332,10 @@ curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/jobs/queued-orders'
 
 ## Suggested next steps
 
-1. Add Alembic migrations and seed data.
-2. Replace the header-based auth stub with JWT bearer authentication.
-3. Add Alpaca paper order fill synchronization.
-4. Add a real market calendar and holiday-aware scheduler.
-5. Add richer charts and historical performance curves.
-6. Add Alembic migrations for production database upgrades.
+1. Add Alembic migrations for production database upgrades.
+2. Add incremental partial-fill accounting and broker-side cancel/replace controls.
+3. Add a real market calendar and holiday-aware scheduler.
+4. Add richer charts and historical performance curves.
 
 ## Example API surface
 
@@ -301,6 +344,7 @@ curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/jobs/queued-orders'
 - `GET /api/v1/dashboard`
 - `GET /api/v1/ai/decisions`
 - `POST /api/v1/ai/analyze?portfolio_id=1`
+- `GET /api/v1/ai/status`
 - `POST /api/v1/ai/debug-sample`
 - `POST /api/v1/jobs/intraday-analysis`
 - `POST /api/v1/jobs/evening-scan`
@@ -325,6 +369,11 @@ curl -X POST -H 'X-User-Id: 1' 'http://localhost:8000/api/v1/jobs/queued-orders'
 - `GET /api/v1/settings/risk-profile-defaults`
 - `GET /api/v1/trades/orders`
 - `POST /api/v1/trades/orders`
+- `POST /api/v1/trades/orders/validate`
+- `POST /api/v1/trades/orders/sync`
+- `GET /api/v1/trades/broker/status`
+- `GET /api/v1/trades/broker/account`
+- `GET /api/v1/settings/system-status`
 - `GET /api/v1/trades/queued`
 - `GET /api/v1/trades`
 - `GET /api/v1/reports`

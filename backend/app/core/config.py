@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     local_ai_provider: str = "ollama"
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3:8b"
+    ollama_timeout_seconds: float = Field(default=90, gt=0, le=600)
+    ai_decision_history_limit: int = Field(default=100, ge=10, le=1000)
     news_rss_sources: list[str] = [
         "https://finance.yahoo.com/news/rssindex",
         "https://feeds.marketwatch.com/marketwatch/topstories/",

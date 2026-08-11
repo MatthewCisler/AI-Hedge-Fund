@@ -3,7 +3,10 @@ import { ActionButton } from "@/components/action-button";
 import { SectionCard, StatCard } from "@/components/cards";
 import { AppLayout } from "@/components/layout";
 import { PortfolioSettingsForm } from "@/components/portfolio-forms";
-import { fetchDashboard, fetchPortfolio, reportCsvUrl } from "@/lib/api";
+import { RecommendationWorkflow } from "@/components/trade-workflow";
+import { ReportDownload } from "@/components/report-download";
+import { fetchDashboard, fetchPortfolio } from "@/lib/api";
+import { formatChicagoTimestamp } from "@/lib/format";
 
 function money(value = 0) {
   return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -46,7 +49,6 @@ export default async function PortfolioDetailPage({ params }: { params: Promise<
           </p>
         </div>
         <div className="pageActions">
-          <ActionButton label="Run AI analysis now" path={`/portfolios/${portfolio.id}/run-analysis`} variant="primary" />
           <ActionButton label="Generate daily report now" path={`/portfolios/${portfolio.id}/generate-report`} />
           <ActionButton label="Rebalance now" path={`/portfolios/${portfolio.id}/rebalance`} />
           {portfolio.is_active ? (
@@ -64,6 +66,10 @@ export default async function PortfolioDetailPage({ params }: { params: Promise<
         <StatCard label="Daily gain/loss" value={money(portfolio.daily_gain_loss)} tone={portfolio.daily_gain_loss >= 0 ? "positive" : "negative"} />
         <StatCard label="Total return" value={pct(portfolio.total_return_pct)} tone={portfolio.total_return_pct >= 0 ? "positive" : "negative"} />
       </div>
+
+      <SectionCard title="AI recommendation to paper order" subtitle="Review the research, then explicitly confirm any proposed trade">
+        <RecommendationWorkflow portfolio={portfolio} recent={portfolio.ai_decisions.slice(0, 6)} />
+      </SectionCard>
 
       <div className="dashboardGrid">
         <SectionCard title="Current holdings" subtitle="Paper positions only">
@@ -156,6 +162,7 @@ export default async function PortfolioDetailPage({ params }: { params: Promise<
                     {decision.ticker} {decision.action_suggestion} ({(decision.confidence_score * 100).toFixed(0)}%)
                   </summary>
                   <p className="muted">{decision.explanation}</p>
+                  <p className="muted">{formatChicagoTimestamp(decision.created_at)} · Rules {String(decision.rules_result?.status ?? "pending").replaceAll("_", " ")}</p>
                 </details>
               ))
             ) : (
@@ -200,9 +207,7 @@ export default async function PortfolioDetailPage({ params }: { params: Promise<
 
         <SectionCard title="Latest daily report" subtitle="Generated report output">
           {latestReport ? (
-            <a className="button secondary" href={reportCsvUrl(latestReport.id)}>
-              Open latest report CSV
-            </a>
+            <ReportDownload reportId={latestReport.id} label="Open latest report CSV" />
           ) : (
             <p className="muted">No daily report generated for this portfolio yet.</p>
           )}

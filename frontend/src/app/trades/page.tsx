@@ -1,10 +1,12 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard } from "@/components/cards";
 import { ActionButton } from "@/components/action-button";
-import { fetchOrders, fetchQueuedTrades, fetchTrades } from "@/lib/api";
+import { OrderForm } from "@/components/trade-workflow";
+import { fetchOrders, fetchPortfolios, fetchQueuedTrades, fetchTrades } from "@/lib/api";
+import { formatChicagoTimestamp } from "@/lib/format";
 
 export default async function TradesPage() {
-  const [orders, queued, trades] = await Promise.all([fetchOrders(), fetchQueuedTrades(), fetchTrades()]);
+  const [orders, queued, trades, portfolios] = await Promise.all([fetchOrders(), fetchQueuedTrades(), fetchTrades(), fetchPortfolios()]);
 
   return (
     <AppLayout>
@@ -14,9 +16,12 @@ export default async function TradesPage() {
           <h1>Orders, fills, and queued activity</h1>
         </div>
         <div className="pageActions">
-          <ActionButton label="Run Queued Orders" path="/jobs/queued-orders" variant="primary" />
+          <ActionButton label="Sync Alpaca paper orders" path="/trades/orders/sync" variant="primary" />
         </div>
       </div>
+      <SectionCard title="Submit a paper order" subtitle="Every order is checked by deterministic portfolio rules before queueing or submission">
+        {portfolios.length ? <OrderForm portfolios={portfolios} /> : <p className="emptyState">Create a portfolio before submitting an order.</p>}
+      </SectionCard>
       <div className="dashboardGrid">
         <SectionCard title="Recent trades" subtitle="Filled paper-trading activity">
           <div className="list">
@@ -60,7 +65,7 @@ export default async function TradesPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Orders" subtitle="Alpaca paper order submissions and rejections">
+        <SectionCard title="Orders" subtitle="Broker submissions stay pending until a confirmed Alpaca paper fill is synchronized">
           <div className="list">
             {orders.length ? (
               orders.map((order) => (
@@ -70,6 +75,7 @@ export default async function TradesPage() {
                       {order.side.toUpperCase()} {order.ticker}
                     </strong>
                     <p className="muted">{order.broker_order_id ?? order.rejection_reason ?? "Local paper adapter"}</p>
+                    <p className="muted">Submitted {order.submitted_at ? formatChicagoTimestamp(order.submitted_at) : "pending"}{order.filled_at ? ` · Filled ${formatChicagoTimestamp(order.filled_at)}` : ""}</p>
                   </div>
                   <div className="alignRight">
                     <strong>{order.status}</strong>

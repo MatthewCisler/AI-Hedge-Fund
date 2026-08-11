@@ -7,6 +7,7 @@ import httpx
 from app.db.init_db import create_database_schema, seed_demo_data
 from app.db.session import SessionLocal
 from app.main import app
+from app.core.security import create_access_token
 
 
 SMOKE_GET_PATHS = [
@@ -19,6 +20,9 @@ SMOKE_GET_PATHS = [
     "/api/v1/trades/queued",
     "/api/v1/trades",
     "/api/v1/ai/decisions",
+    "/api/v1/ai/status",
+    "/api/v1/trades/broker/status",
+    "/api/v1/settings/system-status",
     "/api/v1/reports",
     "/api/v1/settings/risk-profile-defaults",
 ]
@@ -31,7 +35,7 @@ async def run() -> None:
 
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
-        headers = {"X-User-Id": "1"}
+        headers = {"Authorization": f"Bearer {create_access_token('1')}"}
         for path in SMOKE_GET_PATHS:
             response = await client.get(path, headers=headers)
             response.raise_for_status()
@@ -39,6 +43,7 @@ async def run() -> None:
 
         posts = [
             "/api/v1/ai/debug-sample",
+            "/api/v1/trades/orders/sync",
             "/api/v1/portfolios/1/run-analysis",
             "/api/v1/portfolios/1/rebalance",
             "/api/v1/portfolios/1/generate-report",

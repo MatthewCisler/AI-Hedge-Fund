@@ -1,6 +1,6 @@
 """Portfolio schemas."""
 
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -101,6 +101,12 @@ class PortfolioAIDecisionResponse(ORMModel):
     action_suggestion: str
     confidence_score: float
     explanation: str
+    provider: str = "legacy"
+    model_name: str | None = None
+    analysis_status: str = "completed"
+    failure_category: str | None = None
+    analysis_run_id: str | None = None
+    created_at: datetime
     input_snapshot: dict | None = None
     rules_result: dict | None = None
 

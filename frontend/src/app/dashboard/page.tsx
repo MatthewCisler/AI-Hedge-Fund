@@ -1,10 +1,11 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard, StatCard } from "@/components/cards";
 import { PortfolioSwitcher } from "@/components/portfolio-switcher";
-import { fetchDashboard } from "@/lib/api";
+import { fetchDashboard, fetchSystemStatus } from "@/lib/api";
+import { formatChicagoTimestamp } from "@/lib/format";
 
 export default async function DashboardPage() {
-  const dashboard = await fetchDashboard();
+  const [dashboard, systemStatus] = await Promise.all([fetchDashboard(), fetchSystemStatus()]);
   const firstPortfolio = dashboard?.portfolios[0];
   const spy = dashboard?.benchmarks.find((item) => item.benchmark_symbol === "SPY");
   const qqq = dashboard?.benchmarks.find((item) => item.benchmark_symbol === "QQQ");
@@ -34,6 +35,15 @@ export default async function DashboardPage() {
         />
         <StatCard label="Queued trades" value={`${dashboard?.queued_trades.length ?? 0}`} />
       </div>
+
+      <SectionCard title="System status" subtitle="Paper-trading services and current portfolio state">
+        <div className="statusGrid">
+          <div><span>AI</span><strong className={`statusText ${systemStatus?.ai.status ?? "offline"}`}>{systemStatus?.ai.model_name ?? "Ollama"} — {systemStatus?.ai.status ?? "offline"}</strong></div>
+          <div><span>Broker</span><strong className={`statusText ${systemStatus?.broker.status ?? "demo"}`}>Alpaca Paper — {systemStatus?.broker.status === "connected" ? "Connected" : systemStatus?.broker.status === "disconnected" ? "Disconnected" : "Demo"}</strong></div>
+          <div><span>Market</span><strong className={`statusText ${systemStatus?.market.status ?? "closed"}`}>{systemStatus?.market.status === "open" ? "Open" : "Closed"}</strong></div>
+          <div><span>Portfolio</span><strong className={`statusText ${firstPortfolio?.is_active ? "online" : "offline"}`}>{firstPortfolio?.is_active ? "Active" : "Paused"}</strong></div>
+        </div>
+      </SectionCard>
 
       <div className="dashboardGrid">
         <SectionCard title="Portfolios" subtitle="Current value, cash, and risk profile">
@@ -103,13 +113,13 @@ export default async function DashboardPage() {
         <SectionCard title="Recent AI decisions" subtitle="Advisory only, never direct execution">
           <div className="list">
             {dashboard?.recent_ai_decisions.map((decision, index) => (
-              <div key={index} className="listRow">
-                <strong>
-                  {decision.ticker} {decision.action_suggestion}
-                </strong>
-                <p className="muted">
-                  Confidence {(decision.confidence_score * 100).toFixed(0)}% | {decision.explanation}
-                </p>
+              <div key={index} className={`listRow stacked ${decision.provider === "deterministic_fallback" ? "fallbackDecision" : ""}`}>
+                <div>
+                  <strong>{decision.ticker} · {decision.action_suggestion.toUpperCase()} · {decision.provider === "deterministic_fallback" ? "AI FALLBACK" : `${(decision.confidence_score * 100).toFixed(0)}% confidence`}</strong>
+                  <p className="muted">{formatChicagoTimestamp(decision.created_at)}</p>
+                  <p>{decision.explanation}</p>
+                  <p className="muted">Rules: {String(decision.rules_result?.status ?? "pending").replaceAll("_", " ")}</p>
+                </div>
               </div>
             )) ?? <p className="muted">No AI decisions recorded yet.</p>}
           </div>

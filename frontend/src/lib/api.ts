@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import {
   AIDecision,
   DailyReport,
@@ -8,116 +9,42 @@ import {
   PortfolioSummary,
   QueuedTrade,
   Trade,
+  UserSession,
+  SystemStatus,
 } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+export const SESSION_COOKIE = "paper_fund_session";
 
-export async function fetchDashboard(userId = "1"): Promise<DashboardData | null> {
+async function apiFetch<T>(path: string): Promise<T | null> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token) return null;
   try {
-    const response = await fetch(`${API_BASE_URL}/dashboard`, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Id": userId,
-      },
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-    if (!response.ok) {
-      return null;
-    }
-    return (await response.json()) as DashboardData;
+    return response.ok ? ((await response.json()) as T) : null;
   } catch {
     return null;
   }
 }
 
-async function apiGet<T>(path: string, userId = "1"): Promise<T[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Id": userId,
-      },
-      cache: "no-store",
-    });
-    if (!response.ok) {
-      return [];
-    }
-    return (await response.json()) as T[];
-  } catch {
-    return [];
-  }
+async function apiList<T>(path: string): Promise<T[]> {
+  return (await apiFetch<T[]>(path)) ?? [];
 }
 
-export async function apiRequest<T>(path: string, options: RequestInit = {}, userId = "1"): Promise<T | null> {
-  try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Id": userId,
-        ...(options.headers ?? {}),
-      },
-      cache: "no-store",
-    });
-    if (!response.ok) {
-      return null;
-    }
-    return (await response.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
-export function fetchPortfolios() {
-  return apiGet<PortfolioSummary>("/portfolios");
-}
-
-export function fetchPortfolio(id: string | number) {
-  return apiRequest<PortfolioDetail>(`/portfolios/${id}`);
-}
-
-export function fetchPortfolioRules(id: string | number) {
-  return apiRequest<PortfolioRule>(`/portfolios/${id}/rules`);
-}
-
-export function fetchOrders() {
-  return apiGet<Order>("/trades/orders");
-}
-
-export function fetchQueuedTrades() {
-  return apiGet<QueuedTrade>("/trades/queued");
-}
-
-export function fetchTrades() {
-  return apiGet<Trade>("/trades");
-}
-
-export function fetchReports() {
-  return apiGet<DailyReport>("/reports");
-}
-
-export function fetchAIDecisions() {
-  return apiGet<AIDecision>("/ai/decisions");
-}
-
+export function fetchSession() { return apiFetch<UserSession>("/auth/me"); }
+export function fetchSystemStatus() { return apiFetch<SystemStatus>("/settings/system-status"); }
+export function fetchDashboard() { return apiFetch<DashboardData>("/dashboard"); }
+export function fetchPortfolios() { return apiList<PortfolioSummary>("/portfolios"); }
+export function fetchPortfolio(id: string | number) { return apiFetch<PortfolioDetail>(`/portfolios/${id}`); }
+export function fetchPortfolioRules(id: string | number) { return apiFetch<PortfolioRule>(`/portfolios/${id}/rules`); }
+export function fetchOrders() { return apiList<Order>("/trades/orders"); }
+export function fetchQueuedTrades() { return apiList<QueuedTrade>("/trades/queued"); }
+export function fetchTrades() { return apiList<Trade>("/trades"); }
+export function fetchReports() { return apiList<DailyReport>("/reports"); }
+export function fetchAIDecisions() { return apiList<AIDecision>("/ai/decisions"); }
 export async function fetchRiskDefaults(): Promise<Record<string, Record<string, number | boolean | string[]>>> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/settings/risk-profile-defaults`, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Id": "1",
-      },
-      cache: "no-store",
-    });
-    if (!response.ok) {
-      return {};
-    }
-    return (await response.json()) as Record<string, Record<string, number | boolean | string[]>>;
-  } catch {
-    return {};
-  }
-}
-
-export function reportCsvUrl(reportId: number) {
-  return `${API_BASE_URL}/reports/${reportId}/csv?user_id=1`;
+  return (await apiFetch("/settings/risk-profile-defaults")) ?? {};
 }

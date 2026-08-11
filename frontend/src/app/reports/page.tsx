@@ -1,7 +1,8 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard } from "@/components/cards";
 import { ActionButton } from "@/components/action-button";
-import { fetchDashboard, fetchReports, reportCsvUrl } from "@/lib/api";
+import { ReportDownload } from "@/components/report-download";
+import { fetchDashboard, fetchReports } from "@/lib/api";
 
 export default async function ReportsPage() {
   const reports = await fetchReports();
@@ -37,9 +38,7 @@ export default async function ReportsPage() {
                     ))}
                   </div>
                 </div>
-                <a className="button secondary" href={reportCsvUrl(report.id)}>
-                  CSV
-                </a>
+                <ReportDownload reportId={report.id} label="CSV" />
               </div>
             ))
           ) : (

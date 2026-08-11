@@ -16,9 +16,9 @@ router = APIRouter()
 @router.post("/intraday-analysis")
 async def trigger_intraday_analysis(
     force: bool = Query(default=True),
-    _: int = Depends(get_current_user_id),
+    user_id: int = Depends(get_current_user_id),
 ) -> dict:
-    return run_intraday_analysis(force=force)
+    return run_intraday_analysis(force=force, user_id=user_id)
 
 
 @router.post("/evening-scan")
@@ -29,14 +29,14 @@ async def trigger_evening_scan(_: int = Depends(get_current_user_id)) -> dict:
 @router.post("/queued-orders")
 async def trigger_queued_orders(
     force: bool = Query(default=True),
-    _: int = Depends(get_current_user_id),
+    user_id: int = Depends(get_current_user_id),
 ) -> dict:
-    return execute_queued_market_open_orders(force=force)
+    return execute_queued_market_open_orders(force=force, user_id=user_id)
 
 
 @router.post("/daily-reports")
 async def trigger_daily_reports(
     force: bool = Query(default=True),
-    _: int = Depends(get_current_user_id),
+    user_id: int = Depends(get_current_user_id),
 ) -> dict:
-    return publish_daily_reports(force=force)
+    return publish_daily_reports(force=force, user_id=user_id)

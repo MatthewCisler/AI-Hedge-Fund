@@ -1,9 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { PortfolioDetail, PortfolioRule, RiskProfile } from "@/lib/types";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+import { clientApi } from "@/lib/client-api";
 const riskProfiles: RiskProfile[] = ["safe", "balanced", "risky", "custom"];
 const benchmarks = ["SPY", "QQQ", "DIA", "60_40"];
 
@@ -18,36 +18,29 @@ function pct(value: FormDataEntryValue | null) {
   return Math.min(100, Math.max(0, Number(value ?? 0)));
 }
 
-async function send(path: string, method: string, body: unknown) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Id": "1",
-    },
-    body: JSON.stringify(body),
-  });
-  return { ok: response.ok, status: response.status, data: response.ok ? await response.json() : null };
-}
-
 export function CreatePortfolioForm() {
   const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+  const router = useRouter();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("Creating...");
+    setBusy(true);
+    setStatus("Creating…");
     const data = new FormData(event.currentTarget);
     const name = String(data.get("name") ?? "").trim();
     const initial = Number(data.get("initial_investment") ?? 0);
     if (!name) {
       setStatus("Portfolio name is required.");
+      setBusy(false);
       return;
     }
     if (initial <= 0) {
       setStatus("Initial investment must be positive.");
+      setBusy(false);
       return;
     }
-    const result = await send("/portfolios", "POST", {
+    const result = await clientApi<PortfolioDetail>("/portfolios", { method: "POST", body: JSON.stringify({
       name,
       initial_investment: initial,
       risk_profile: data.get("risk_profile"),
@@ -68,12 +61,14 @@ export function CreatePortfolioForm() {
         aggressiveness: pct(data.get("aggressiveness")),
         after_hours_news_scanning: true,
       },
-    });
-    if (!result.ok || !result.data?.id) {
-      setStatus(`Create failed: ${result.status}`);
+    }) });
+    if (!result.ok) {
+      setStatus(result.error);
+      setBusy(false);
       return;
     }
-    window.location.href = `/portfolios/${result.data.id}`;
+    router.push(`/portfolios/${result.data.id}/settings`);
+    router.refresh();
   }
 
   return (
@@ -136,8 +131,8 @@ export function CreatePortfolioForm() {
         <input name="etf_allowed" type="checkbox" defaultChecked />
         Allow ETFs
       </label>
-      <button className="button primary" type="submit">
-        Create portfolio
+      <button className="button primary" type="submit" disabled={busy}>
+        {busy ? "Creating…" : "Create portfolio"}
       </button>
       {status ? <p className="muted">{status}</p> : null}
     </form>
@@ -146,11 +141,14 @@ export function CreatePortfolioForm() {
 
 export function PortfolioSettingsForm({ portfolio }: { portfolio: PortfolioDetail }) {
   const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+  const router = useRouter();
   const rules = portfolio.rules;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("Saving...");
+    setBusy(true);
+    setStatus("Saving…");
     const data = new FormData(event.currentTarget);
     const riskProfile = String(data.get("risk_profile") ?? portfolio.risk_profile) as RiskProfile;
     const active = data.get("is_active") === "on";
@@ -172,15 +170,16 @@ export function PortfolioSettingsForm({ portfolio }: { portfolio: PortfolioDetai
       after_hours_news_scanning: data.get("after_hours_news_scanning") === "on",
     };
 
-    const portfolioResult = await send(`/portfolios/${portfolio.id}`, "PATCH", {
+    const portfolioResult = await clientApi<PortfolioDetail>(`/portfolios/${portfolio.id}`, { method: "PATCH", body: JSON.stringify({
       risk_profile: riskProfile,
       is_active: active,
       benchmark_symbol: data.get("benchmark_symbol"),
-    });
-    const ruleResult = await send(`/portfolios/${portfolio.id}/rules`, "PATCH", ruleBody);
-    setStatus(portfolioResult.ok && ruleResult.ok ? "Saved. Refreshing..." : "Save failed.");
+    }) });
+    const ruleResult = await clientApi<PortfolioRule>(`/portfolios/${portfolio.id}/rules`, { method: "PATCH", body: JSON.stringify(ruleBody) });
+    setStatus(portfolioResult.ok && ruleResult.ok ? "Rules saved." : !portfolioResult.ok ? portfolioResult.error : !ruleResult.ok ? ruleResult.error : "Save failed.");
+    setBusy(false);
     if (portfolioResult.ok && ruleResult.ok) {
-      window.location.reload();
+      router.refresh();
     }
   }
 
@@ -270,8 +269,8 @@ export function PortfolioSettingsForm({ portfolio }: { portfolio: PortfolioDetai
           Portfolio active
         </label>
       </div>
-      <button className="button primary" type="submit">
-        Save tuning
+      <button className="button primary" type="submit" disabled={busy}>
+        {busy ? "Saving…" : "Save tuning"}
       </button>
       {status ? <p className="muted">{status}</p> : null}
     </form>

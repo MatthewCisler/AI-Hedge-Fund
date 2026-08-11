@@ -28,7 +28,10 @@ class Portfolio(TimestampMixin, Base):
     orders = relationship("Order", back_populates="portfolio", cascade="all, delete-orphan")
     trades = relationship("Trade", back_populates="portfolio", cascade="all, delete-orphan")
     queued_trades = relationship("QueuedTrade", back_populates="portfolio", cascade="all, delete-orphan")
-    ai_decisions = relationship("AIDecision", back_populates="portfolio", cascade="all, delete-orphan")
+    ai_decisions = relationship(
+        "AIDecision", back_populates="portfolio", cascade="all, delete-orphan",
+        order_by="AIDecision.created_at.desc()",
+    )
     daily_reports = relationship("DailyReport", back_populates="portfolio", cascade="all, delete-orphan")
     benchmark_snapshots = relationship("BenchmarkSnapshot", back_populates="portfolio", cascade="all, delete-orphan")
 
