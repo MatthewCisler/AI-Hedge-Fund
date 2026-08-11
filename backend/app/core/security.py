@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from jose import jwt
+from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
@@ -23,3 +23,13 @@ def create_access_token(subject: str) -> str:
     expire = datetime.now(timezone.utc) + expires_delta
     to_encode = {"sub": subject, "exp": expire}
     return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+
+
+def decode_access_token(token: str) -> int | None:
+    """Return the authenticated user id, or None for any invalid token."""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        subject = payload.get("sub")
+        return int(subject) if subject is not None else None
+    except (JWTError, TypeError, ValueError):
+        return None

@@ -1,4 +1,4 @@
-export type RiskProfile = "safe" | "balanced" | "risky";
+export type RiskProfile = "safe" | "balanced" | "risky" | "custom";
 
 export type PortfolioSummary = {
   id: number;
@@ -8,6 +8,50 @@ export type PortfolioSummary = {
   current_value: number;
   risk_profile: RiskProfile;
   is_active: boolean;
+  benchmark_symbol: string;
+  daily_gain_loss: number;
+  total_return_pct: number;
+};
+
+export type PortfolioRule = {
+  portfolio_id: number;
+  max_position_size_pct: number;
+  max_daily_trades: number;
+  max_weekly_trades: number;
+  etf_allowed: boolean;
+  rebalance_threshold: number;
+  sector_concentration_limit: number;
+  cash_reserve_pct: number;
+  minimum_liquidity_volume: number;
+  allow_queued_after_hours: boolean;
+  cooldown_minutes_per_ticker: number;
+  allowed_tickers: string[];
+  blocked_tickers: string[];
+  aggressiveness: number;
+  after_hours_news_scanning: boolean;
+};
+
+export type Position = {
+  id: number;
+  ticker: string;
+  asset_name: string | null;
+  asset_type: string;
+  quantity: number;
+  average_cost: number;
+  market_price: number;
+  market_value: number;
+  unrealized_pnl: number;
+  sector: string | null;
+};
+
+export type PortfolioDetail = PortfolioSummary & {
+  rules: PortfolioRule | null;
+  positions: Position[];
+  queued_trades: QueuedTrade[];
+  trades: Trade[];
+  ai_decisions: AIDecision[];
+  daily_reports: DailyReport[];
+  benchmark_snapshots: BenchmarkSnapshot[];
 };
 
 export type BenchmarkSnapshot = {
@@ -42,6 +86,9 @@ export type Order = {
   requested_price: number | null;
   broker_order_id: string | null;
   rejection_reason: string | null;
+  ai_decision_id: number | null;
+  submitted_at: string | null;
+  filled_at: string | null;
 };
 
 export type Trade = {
@@ -72,6 +119,11 @@ export type AIDecision = {
   action_suggestion: string;
   confidence_score: number;
   explanation: string;
+  provider: "ollama" | "deterministic_fallback" | "legacy";
+  model_name: string | null;
+  analysis_status: "completed" | "fallback" | "failed";
+  failure_category: string | null;
+  analysis_run_id: string | null;
   input_snapshot: Record<string, unknown> | null;
   rules_result: Record<string, unknown> | null;
   created_at: string;
@@ -101,4 +153,17 @@ export type DashboardData = {
   recent_ai_decisions: AIDecision[];
   latest_reports: DailyReport[];
   benchmarks: BenchmarkSnapshot[];
+};
+
+export type UserSession = {
+  id: number;
+  email: string;
+  full_name: string | null;
+  broker_mode: "demo-simulation" | "alpaca-paper";
+};
+
+export type SystemStatus = {
+  ai: { status: "online" | "offline" | "error"; provider: string; model_name: string | null; failure_category?: string | null };
+  broker: { status: "connected" | "disconnected" | "demo"; connected: boolean; mode: string; buying_power?: number | null; cash?: number | null; portfolio_value?: number | null; failure_category?: string | null };
+  market: { status: "open" | "closed"; timezone: string; checked_at: string };
 };

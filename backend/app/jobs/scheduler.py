@@ -12,6 +12,7 @@ from app.jobs.tasks import (
     publish_daily_reports,
     run_evening_scan,
     run_intraday_analysis,
+    synchronize_broker_orders,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,12 @@ class SchedulerService:
             execute_queued_market_open_orders,
             CronTrigger(day_of_week="mon-fri", hour=settings.market_open_hour_ct, minute=settings.market_open_minute_ct),
             id="market_open_queue",
+            replace_existing=True,
+        )
+        self.scheduler.add_job(
+            synchronize_broker_orders,
+            CronTrigger(day_of_week="mon-fri", hour="8-15", minute="*/2"),
+            id="broker_order_sync",
             replace_existing=True,
         )
         self.scheduler.add_job(

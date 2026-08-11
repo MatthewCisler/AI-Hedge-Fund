@@ -15,14 +15,14 @@ router = APIRouter()
 
 
 @router.get("", response_model=list[DailyReportResponse])
-def list_reports(
+async def list_reports(
     db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)
 ) -> list[DailyReportResponse]:
     return report_service.list_reports(db, user_id)
 
 
 @router.get("/{report_id}", response_model=DailyReportResponse)
-def get_report(
+async def get_report(
     report_id: int,
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
@@ -34,7 +34,7 @@ def get_report(
 
 
 @router.get("/{report_id}/csv")
-def download_report_csv(
+async def download_report_csv(
     report_id: int,
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
@@ -49,7 +49,7 @@ def download_report_csv(
 
 
 @router.post("/generate", response_model=DailyReportResponse, status_code=status.HTTP_201_CREATED)
-def generate_report(
+async def generate_report(
     portfolio_id: int = Query(...),
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),

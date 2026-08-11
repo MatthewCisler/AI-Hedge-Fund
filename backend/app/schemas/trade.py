@@ -1,5 +1,7 @@
 """Order and trade schemas."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 from app.schemas.common import ORMModel
@@ -10,6 +12,7 @@ class OrderCreate(BaseModel):
     ticker: str = Field(min_length=1, max_length=16)
     side: str = Field(pattern="^(buy|sell)$")
     quantity: float = Field(gt=0)
+    ai_decision_id: int | None = None
 
 
 class OrderResponse(ORMModel):
@@ -23,6 +26,9 @@ class OrderResponse(ORMModel):
     requested_price: float | None
     broker_order_id: str | None
     rejection_reason: str | None
+    ai_decision_id: int | None = None
+    submitted_at: datetime | None = None
+    filled_at: datetime | None = None
 
 
 class QueuedTradeResponse(ORMModel):

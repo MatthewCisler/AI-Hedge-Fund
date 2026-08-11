@@ -1,9 +1,13 @@
 import { AppLayout } from "@/components/layout";
 import { SectionCard } from "@/components/cards";
-import { fetchReports, reportCsvUrl } from "@/lib/api";
+import { ActionButton } from "@/components/action-button";
+import { ReportDownload } from "@/components/report-download";
+import { fetchDashboard, fetchReports } from "@/lib/api";
 
 export default async function ReportsPage() {
   const reports = await fetchReports();
+  const dashboard = await fetchDashboard();
+  const portfolio = dashboard?.portfolios[0];
 
   return (
     <AppLayout>
@@ -12,6 +16,11 @@ export default async function ReportsPage() {
           <p className="eyebrow">Daily reports</p>
           <h1>Spreadsheet-style portfolio snapshots</h1>
         </div>
+        {portfolio ? (
+          <div className="pageActions">
+            <ActionButton label="Generate Report" path={`/reports/generate?portfolio_id=${portfolio.id}`} variant="primary" />
+          </div>
+        ) : null}
       </div>
       <SectionCard title="Generated reports" subtitle="Website-backed reports with CSV downloads">
         <div className="list">
@@ -29,9 +38,7 @@ export default async function ReportsPage() {
                     ))}
                   </div>
                 </div>
-                <a className="button secondary" href={reportCsvUrl(report.id)}>
-                  CSV
-                </a>
+                <ReportDownload reportId={report.id} label="CSV" />
               </div>
             ))
           ) : (
